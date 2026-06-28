@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set, Tuple
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -36,12 +36,12 @@ def main() -> int:
         raise SystemExit("only --dry-run publishing is supported")
 
     publisher = LocalJsonPublisher(Path(args.output_dir))
-    published_hashes = _load_published_hashes(Path(args.output_dir) / "excerpts.json")
-    material_pool = load_material_pool(Path(args.material_pool))
 
     try:
+        published_hashes = _load_published_hashes(Path(args.output_dir) / "excerpts.json")
+        material_pool = load_material_pool(Path(args.material_pool))
         raw_path = Path(args.raw_note_html) if args.raw_note_html else None
-        excerpt = _build_from_raw_note(args.date, raw_path) if raw_path else None
+        excerpt, fresh_skip_reason = _build_from_raw_note(args.date, raw_path)
         if excerpt and excerpt["content_hash"] not in published_hashes:
             excerpt_id = publisher.publish_excerpt(excerpt)
             publisher.publish_job_log(
@@ -55,6 +55,8 @@ def main() -> int:
             )
             print(f"published excerpt {excerpt_id}")
             return 0
+        if excerpt and excerpt["content_hash"] in published_hashes:
+            fresh_skip_reason = "fresh excerpt duplicate"
 
         fallback = select_fallback_material(material_pool, published_hashes=published_hashes)
         if not fallback:
@@ -88,7 +90,7 @@ def main() -> int:
                 source_name=excerpt["source_name"],
                 excerpt_id=excerpt_id,
                 fallback_material_id=fallback.get("id", ""),
-                message="used fallback material",
+                message=_fallback_message(fresh_skip_reason),
             )
         )
         print(f"published excerpt {excerpt_id}")
@@ -106,38 +108,63 @@ def main() -> int:
         raise
 
 
-def _build_from_raw_note(date: str, raw_note_html: Path) -> Optional[Dict[str, Any]]:
+def _build_from_raw_note(
+    date: str, raw_note_html: Optional[Path]
+) -> Tuple[Optional[Dict[str, Any]], str]:
+    if raw_note_html is None:
+        return None, "raw note html not provided"
     if not raw_note_html.exists():
-        return None
+        return None, "raw note html missing"
     html_text = raw_note_html.read_text(encoding="utf-8")
     note = extract_note(html_text, "local-fixture", "欣欣的阅读疗愈记")
     if note.get("parse_status") != "ok":
-        return None
+        return None, f"raw note parse failed: {note.get('parse_status') or 'unknown'}"
 
     ocr_texts = create_ocr_client().extract_texts(note.get("image_urls", []))
     paragraphs = rebuild_paragraphs(note.get("content", ""), "\n\n".join(ocr_texts))
     if not paragraphs:
-        return None
+        return None, "raw note had no paragraphs"
 
     title = note.get("title") or "每日文摘"
-    return make_excerpt(
-        date=date,
-        title=title,
-        paragraphs=paragraphs,
-        summary=build_summary(paragraphs),
-        source_name=note.get("account_name") or note.get("expected_account_name") or "",
-        source_url=note.get("note_url") or "",
-        source_account_id="xiaohongshu-xinxin",
-        content_hash=content_hash(title, paragraphs),
-        publish_type="fresh",
+    return (
+        make_excerpt(
+            date=date,
+            title=title,
+            paragraphs=paragraphs,
+            summary=build_summary(paragraphs),
+            source_name=note.get("account_name") or note.get("expected_account_name") or "",
+            source_url=note.get("note_url") or "",
+            source_account_id="xiaohongshu-xinxin",
+            content_hash=content_hash(title, paragraphs),
+            publish_type="fresh",
+        ),
+        "",
     )
 
 
 def _load_published_hashes(path: Path) -> Set[str]:
     if not path.exists():
         return set()
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return {item.get("content_hash", "") for item in data if isinstance(item, dict)}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path} contains invalid JSON") from exc
+    if not isinstance(data, list):
+        raise ValueError(f"{path} must contain a JSON list")
+    hashes = set()
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        content_hash_value = item.get("content_hash")
+        if isinstance(content_hash_value, str):
+            hashes.add(content_hash_value)
+    return hashes
+
+
+def _fallback_message(fresh_skip_reason: str) -> str:
+    if fresh_skip_reason:
+        return f"used fallback material: {fresh_skip_reason}"
+    return "used fallback material"
 
 
 if __name__ == "__main__":
