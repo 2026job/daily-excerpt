@@ -71,6 +71,16 @@ def test_rebuild_paragraphs_without_ocr_splits_long_text():
     ]
 
 
+def test_rebuild_paragraphs_ignores_ocr_without_blank_line_blocks():
+    text = "生活是自己的。不要活在别人的眼里。每个人都有自己的节奏。慢慢走，也是在认真抵达。"
+    ocr_text = "生活是自己的。\n不要活在别人的眼里。\n每个人都有自己的节奏。\n慢慢走，也是在认真抵达。"
+
+    assert rebuild_paragraphs(text, ocr_text, min_paragraph_len=12, max_paragraph_len=32) == [
+        "生活是自己的。不要活在别人的眼里。",
+        "每个人都有自己的节奏。慢慢走，也是在认真抵达。",
+    ]
+
+
 def test_rebuild_paragraphs_merges_short_paragraphs():
     text = "短句。下一句很短。这里是一段足够长的内容。"
     assert rebuild_paragraphs(text, "", min_paragraph_len=8, max_paragraph_len=8) == [

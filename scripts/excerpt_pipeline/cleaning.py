@@ -56,8 +56,12 @@ def _clean_ocr_blocks(ocr_text: str) -> List[str]:
 
 
 def _ocr_paragraph_sentence_counts(ocr_text: str) -> List[int]:
+    blocks = _clean_ocr_blocks(ocr_text)
+    if len(blocks) < 2:
+        return []
+
     counts = []
-    for block in _clean_ocr_blocks(ocr_text):
+    for block in blocks:
         count = len(split_sentences(block))
         if count:
             counts.append(count)
