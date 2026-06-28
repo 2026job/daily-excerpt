@@ -40,3 +40,15 @@ Dry run 会把输出写入 `data/output/`，不会调用微信云数据库。
 - `TENCENT_OCR_REGION`
 
 不要把真实密钥提交到仓库。
+
+## 微信小程序开发
+
+用微信开发者工具打开 `miniprogram/` 目录。首次接入真实云开发环境时，需要：
+
+1. 将 `miniprogram/project.config.json` 中的 `appid` 替换成真实小程序 AppID。
+2. 在微信开发者工具中开通云开发。
+3. 创建 `excerpts`、`sources`、`material_pool`、`job_logs` 集合。
+4. 配置数据库权限，让普通用户只能读取 `status = "published"` 的文摘。
+5. 在 GitHub Actions Secrets 中配置微信云开发和 OCR 凭据。
+
+第一版可以先用 `python3 scripts/build_daily_excerpt.py --dry-run` 验证文摘生成，再接入真实微信云数据库发布。
