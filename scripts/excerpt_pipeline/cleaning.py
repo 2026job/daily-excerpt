@@ -32,7 +32,7 @@ def split_sentences(text: str) -> List[str]:
     cleaned = clean_text(text)
     if not cleaned:
         return []
-    parts = re.split(r"(?<=[。！？!?；;])\s*|\n+", cleaned)
+    parts = re.split(r"(?<=[。！？!?；;。\.])\s*|\n+", cleaned)
     return [part.strip() for part in parts if part.strip()]
 
 

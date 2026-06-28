@@ -12,12 +12,44 @@ def test_clean_text_removes_html_and_extra_space():
     assert clean_text(raw) == "生活是自己的\n#阅读 小红书"
 
 
+def test_clean_text_unescapes_html_entities():
+    assert clean_text("生活&amp;阅读&nbsp;") == "生活&阅读"
+
+
+def test_clean_text_normalizes_crlf_line_endings():
+    raw = "第一行\r\n\r\n第二行\r第三行"
+    assert clean_text(raw) == "第一行\n第二行\n第三行"
+
+
+def test_clean_text_removes_known_platform_noise():
+    raw = "生活是自己的\n3 亿人的生活经验，都在小红书\n慢慢来"
+    assert clean_text(raw) == "生活是自己的\n慢慢来"
+
+
 def test_split_sentences_handles_chinese_punctuation():
     text = "生活是自己的。不要活在别人的眼里！慢慢来，也是在抵达"
     assert split_sentences(text) == [
         "生活是自己的。",
         "不要活在别人的眼里！",
         "慢慢来，也是在抵达",
+    ]
+
+
+def test_split_sentences_handles_english_period():
+    text = "Keep going. Stay curious. 慢慢来"
+    assert split_sentences(text) == [
+        "Keep going.",
+        "Stay curious.",
+        "慢慢来",
+    ]
+
+
+def test_split_sentences_handles_newlines():
+    text = "第一句\n第二句。\n第三句"
+    assert split_sentences(text) == [
+        "第一句",
+        "第二句。",
+        "第三句",
     ]
 
 
@@ -36,6 +68,14 @@ def test_rebuild_paragraphs_without_ocr_splits_long_text():
     assert rebuild_paragraphs(text, "", min_paragraph_len=12, max_paragraph_len=32) == [
         "生活是自己的。不要活在别人的眼里。",
         "每个人都有自己的节奏。慢慢走，也是在认真抵达。",
+    ]
+
+
+def test_rebuild_paragraphs_merges_short_paragraphs():
+    text = "短句。下一句很短。这里是一段足够长的内容。"
+    assert rebuild_paragraphs(text, "", min_paragraph_len=8, max_paragraph_len=8) == [
+        "短句。下一句很短。",
+        "这里是一段足够长的内容。",
     ]
 
 
