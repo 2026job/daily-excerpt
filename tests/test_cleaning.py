@@ -16,6 +16,15 @@ def test_clean_text_unescapes_html_entities():
     assert clean_text("生活&amp;阅读&nbsp;&nbsp;继续") == "生活&阅读 继续"
 
 
+def test_clean_text_preserves_structural_html_breaks():
+    assert clean_text("第一行<br>第二行") == "第一行\n第二行"
+    assert clean_text("<p>第一段</p><p>第二段</p>") == "第一段\n第二段"
+
+
+def test_clean_text_preserves_escaped_angle_bracket_content():
+    assert clean_text("读完&lt;The Road&gt;很震撼") == "读完<The Road>很震撼"
+
+
 def test_clean_text_normalizes_crlf_line_endings():
     raw = "第一行\r\n\r\n第二行\r第三行"
     assert clean_text(raw) == "第一行\n第二行\n第三行"
@@ -86,6 +95,13 @@ def test_rebuild_paragraphs_merges_short_paragraphs():
     assert rebuild_paragraphs(text, "", min_paragraph_len=8, max_paragraph_len=8) == [
         "短句。下一句很短。",
         "这里是一段足够长的内容。",
+    ]
+
+
+def test_rebuild_paragraphs_merges_trailing_short_paragraph():
+    text = "这里是一段足够长的内容。短尾。"
+    assert rebuild_paragraphs(text, "", min_paragraph_len=8, max_paragraph_len=12) == [
+        "这里是一段足够长的内容。短尾。",
     ]
 
 

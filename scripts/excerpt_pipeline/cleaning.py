@@ -14,8 +14,12 @@ def clean_text(value: str) -> str:
     if not value:
         return ""
 
-    text = html.unescape(value)
+    text = value
+    text = re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", text)
+    text = re.sub(r"(?i)</\s*p\s*>", "\n", text)
+    text = re.sub(r"(?i)<\s*p(?:\s+[^>]*)?>", "\n", text)
     text = re.sub(r"<[^>]+>", "", text)
+    text = html.unescape(text)
     text = re.sub(r"\r\n?", "\n", text)
     for pattern in NOISE_PATTERNS:
         text = re.sub(pattern, "", text)
@@ -139,6 +143,9 @@ def _merge_short_paragraphs(paragraphs: Iterable[str], min_paragraph_len: int) -
             result.append(buffer)
             buffer = paragraph
     if buffer:
+        if result and len(buffer) < min_paragraph_len:
+            result[-1] += buffer
+            return result
         result.append(buffer)
     return result
 
