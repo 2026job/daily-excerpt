@@ -6,6 +6,20 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 Material = Dict[str, Any]
 
 
+def _is_usable_material(material: Material) -> bool:
+    title = material.get("title")
+    paragraphs = material.get("paragraphs")
+    summary = material.get("summary")
+    return (
+        isinstance(title, str)
+        and bool(title.strip())
+        and isinstance(paragraphs, list)
+        and any(isinstance(paragraph, str) and paragraph.strip() for paragraph in paragraphs)
+        and isinstance(summary, str)
+        and bool(summary.strip())
+    )
+
+
 def load_material_pool(path: Path) -> List[Material]:
     if not path.exists():
         return []
@@ -25,12 +39,14 @@ def select_fallback_material(
     seen_hashes = set(published_hashes or set())
     for material in materials:
         content_hash = material.get("content_hash")
-        if not content_hash:
+        if not isinstance(content_hash, str) or not content_hash:
             continue
         if content_hash in seen_hashes:
             continue
         seen_hashes.add(content_hash)
         if material.get("status") != "candidate":
+            continue
+        if not _is_usable_material(material):
             continue
         return material
     return None
