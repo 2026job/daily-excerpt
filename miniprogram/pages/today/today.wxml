@@ -1,0 +1,13 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="muted">加载中...</view>
+  <view wx:elif="{{error}}" class="muted">{{error}}</view>
+  <view wx:elif="{{!excerpt}}" class="muted">还没有可阅读的文摘</view>
+  <view wx:else class="excerpt">
+    <view class="date">{{excerpt.date}}</view>
+    <view class="title">{{excerpt.title}}</view>
+    <view class="source">来源：{{excerpt.source_name}}</view>
+    <view class="paragraphs">
+      <view wx:for="{{excerpt.paragraphs}}" wx:key="*this" class="paragraph">{{item}}</view>
+    </view>
+  </view>
+</view>

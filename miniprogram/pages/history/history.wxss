@@ -1,0 +1,29 @@
+.heading {
+  font-size: 40rpx;
+  font-weight: 600;
+  margin-bottom: 32rpx;
+}
+
+.history-item {
+  border-bottom: 1rpx solid rgba(31, 29, 26, 0.12);
+  padding: 28rpx 0;
+}
+
+.item-date {
+  color: #7a756d;
+  font-size: 24rpx;
+  margin-bottom: 10rpx;
+}
+
+.item-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-bottom: 12rpx;
+}
+
+.item-summary {
+  color: #5e594f;
+  font-size: 28rpx;
+  line-height: 1.6;
+}

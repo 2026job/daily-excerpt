@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/today/today",
+    "pages/history/history",
+    "pages/detail/detail"
+  ],
+  "window": {
+    "navigationBarTitleText": "每日文摘",
+    "navigationBarBackgroundColor": "#f7f3ed",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f3ed"
+  },
+  "tabBar": {
+    "color": "#7a756d",
+    "selectedColor": "#1f1d1a",
+    "backgroundColor": "#f7f3ed",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/today/today",
+        "text": "今日"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "历史"
+      }
+    ]
+  }
+}

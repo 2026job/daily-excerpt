@@ -1,0 +1,13 @@
+<view class="page">
+  <view class="heading">历史文摘</view>
+  <view wx:if="{{loading}}" class="muted">加载中...</view>
+  <view wx:elif="{{error}}" class="muted">{{error}}</view>
+  <view wx:elif="{{excerpts.length === 0}}" class="muted">暂无历史文摘</view>
+  <view wx:else>
+    <view wx:for="{{excerpts}}" wx:key="_id" class="history-item" data-id="{{item._id}}" bindtap="openDetail">
+      <view class="item-date">{{item.date}}</view>
+      <view class="item-title">{{item.title}}</view>
+      <view class="item-summary">{{item.summary}}</view>
+    </view>
+  </view>
+</view>
