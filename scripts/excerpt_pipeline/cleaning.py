@@ -22,7 +22,7 @@ def clean_text(value: str) -> str:
 
     lines = []
     for line in text.split("\n"):
-        line = re.sub(r"[ \t]+", " ", line).strip()
+        line = re.sub(r"[ \t\xa0]+", " ", line).strip()
         if line:
             lines.append(line)
     return "\n".join(lines)

@@ -13,7 +13,7 @@ def test_clean_text_removes_html_and_extra_space():
 
 
 def test_clean_text_unescapes_html_entities():
-    assert clean_text("生活&amp;阅读&nbsp;") == "生活&阅读"
+    assert clean_text("生活&amp;阅读&nbsp;&nbsp;继续") == "生活&阅读 继续"
 
 
 def test_clean_text_normalizes_crlf_line_endings():
