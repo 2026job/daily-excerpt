@@ -20,12 +20,17 @@ def load_material_pool(path: Path) -> List[Material]:
 def select_fallback_material(
     materials: Iterable[Material],
     *,
-    published_hashes: Set[str] = set(),
+    published_hashes: Optional[Set[str]] = None,
 ) -> Optional[Material]:
+    seen_hashes = set(published_hashes or set())
     for material in materials:
-        if material.get("status") != "candidate":
+        content_hash = material.get("content_hash")
+        if not content_hash:
             continue
-        if material.get("content_hash") in published_hashes:
+        if content_hash in seen_hashes:
+            continue
+        seen_hashes.add(content_hash)
+        if material.get("status") != "candidate":
             continue
         return material
     return None

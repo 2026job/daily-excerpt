@@ -33,5 +33,29 @@ def test_select_fallback_material_skips_used_and_duplicate_hash():
     assert selected["id"] == "fresh"
 
 
+def test_select_fallback_material_skips_duplicate_hash_seen_earlier_in_pool():
+    pool = [
+        {"id": "used", "status": "used", "content_hash": "x"},
+        {"id": "duplicate", "status": "candidate", "content_hash": "x"},
+        {"id": "fresh", "status": "candidate", "content_hash": "y"},
+    ]
+
+    selected = select_fallback_material(pool)
+
+    assert selected["id"] == "fresh"
+
+
+def test_select_fallback_material_skips_missing_or_empty_content_hash():
+    pool = [
+        {"id": "missing", "status": "candidate"},
+        {"id": "empty", "status": "candidate", "content_hash": ""},
+        {"id": "fresh", "status": "candidate", "content_hash": "fresh-hash"},
+    ]
+
+    selected = select_fallback_material(pool)
+
+    assert selected["id"] == "fresh"
+
+
 def test_select_fallback_material_returns_none_when_empty():
     assert select_fallback_material([], published_hashes=set()) is None
