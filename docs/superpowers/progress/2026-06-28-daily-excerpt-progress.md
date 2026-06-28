@@ -25,11 +25,11 @@
 
 ## 进行中
 
-- Task 1：项目基础整理和本地测试入口。
+- Task 2：清洗分段模块。已派发 subagent `James` 负责 `scripts/excerpt_pipeline/cleaning.py` 与 `tests/test_cleaning.py`。
 
 ## 验证记录
 
-暂无。
+- `python3 -m pytest tests/test_cleaning.py -v`：失败，原因是系统 Python 环境没有安装 `pytest`。接下来创建本地 `.venv` 并安装 `requirements-dev.txt`。
 
 ## 待用户提供
 
