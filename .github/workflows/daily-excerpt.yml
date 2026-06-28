@@ -1,0 +1,40 @@
+name: Daily Excerpt
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 22 * * *"
+
+jobs:
+  build-daily-excerpt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build daily excerpt dry run
+        env:
+          TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          TENCENT_OCR_REGION: ${{ secrets.TENCENT_OCR_REGION }}
+        run: |
+          python scripts/build_daily_excerpt.py \
+            --dry-run \
+            --raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html
+
+      - name: Upload dry-run output
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-excerpt-output
+          path: data/output/
