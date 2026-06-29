@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>每日精美文摘</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f4ef;
+      --ink: #222222;
+      --muted: #706a61;
+      --line: #ddd3c6;
+      --paper: #fffdf9;
+      --accent: #2f6f68;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.75;
+    }
+
+    main {
+      width: min(880px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-end;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .date {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    article {
+      padding: 28px 0 30px;
+    }
+
+    h2 {
+      font-size: clamp(22px, 4vw, 34px);
+      line-height: 1.35;
+      font-weight: 650;
+      margin-bottom: 10px;
+    }
+
+    .source {
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .paragraphs {
+      display: grid;
+      gap: 18px;
+      font-size: 18px;
+    }
+
+    .paragraphs p {
+      background: var(--paper);
+      border: 1px solid rgba(221, 211, 198, 0.75);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    .history {
+      border-top: 1px solid var(--line);
+      padding-top: 24px;
+    }
+
+    .history h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button[aria-current="true"] {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    .empty {
+      padding: 28px 0;
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        width: min(100% - 24px, 880px);
+        padding-top: 26px;
+      }
+
+      header {
+        display: block;
+      }
+
+      .date {
+        margin-top: 6px;
+      }
+
+      .paragraphs {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>每日精美文摘</h1>
+      <p class="date" id="excerpt-date"></p>
+    </header>
+
+    <article id="excerpt-view">
+      <p class="empty">正在读取今日文摘...</p>
+    </article>
+
+    <section class="history" aria-labelledby="history-title">
+      <h2 id="history-title">历史文摘</h2>
+      <ul class="history-list" id="history-list"></ul>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      excerpts: [],
+      selectedIndex: 0
+    };
+
+    const view = document.getElementById("excerpt-view");
+    const dateLabel = document.getElementById("excerpt-date");
+    const historyList = document.getElementById("history-list");
+
+    function escapeText(value) {
+      return String(value || "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function renderExcerpt(index) {
+      const excerpt = state.excerpts[index];
+      state.selectedIndex = index;
+
+      if (!excerpt) {
+        dateLabel.textContent = "";
+        view.innerHTML = '<p class="empty">暂无文摘内容。</p>';
+        historyList.innerHTML = "";
+        return;
+      }
+
+      dateLabel.textContent = excerpt.date || "";
+      const paragraphs = (excerpt.paragraphs || [])
+        .map((paragraph) => `<p>${escapeText(paragraph)}</p>`)
+        .join("");
+      const source = excerpt.source_url
+        ? `<a href="${escapeText(excerpt.source_url)}" target="_blank" rel="noreferrer">${escapeText(excerpt.source_name || "来源")}</a>`
+        : escapeText(excerpt.source_name || "");
+
+      view.innerHTML = `
+        <h2 id="excerpt-title">${escapeText(excerpt.title || "每日文摘")}</h2>
+        <p class="source">${source}</p>
+        <div class="paragraphs">${paragraphs}</div>
+      `;
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = state.excerpts.map((excerpt, index) => `
+        <li>
+          <button type="button" aria-current="${index === state.selectedIndex}" data-index="${index}">
+            ${escapeText(excerpt.date || `第 ${index + 1} 篇`)}
+          </button>
+        </li>
+      `).join("");
+    }
+
+    historyList.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-index]");
+      if (!button) return;
+      renderExcerpt(Number(button.dataset.index));
+    });
+
+    fetch("data/excerpts.json", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("文摘数据读取失败");
+        return response.json();
+      })
+      .then((items) => {
+        state.excerpts = Array.isArray(items)
+          ? items.slice().sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+          : [];
+        renderExcerpt(0);
+      })
+      .catch(() => {
+        view.innerHTML = '<p class="empty">文摘暂时不可用，请稍后再试。</p>';
+      });
+  </script>
+</body>
+</html>

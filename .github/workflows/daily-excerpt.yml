@@ -11,6 +11,10 @@ on:
 jobs:
   build-daily-excerpt:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -46,8 +50,21 @@ jobs:
               --raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html
           fi
 
+      - name: Prepare Pages site
+        run: |
+          mkdir -p site/data
+          cp data/output/excerpts.json site/data/excerpts.json
+
       - name: Upload dry-run output
         uses: actions/upload-artifact@v4
         with:
           name: daily-excerpt-output
           path: data/output/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy Pages
+        uses: actions/deploy-pages@v4
