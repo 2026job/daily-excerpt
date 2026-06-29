@@ -31,6 +31,43 @@ def load_material_pool(path: Path) -> List[Material]:
     return [item for item in data if isinstance(item, dict)]
 
 
+def save_material_pool(path: Path, materials: List[Material]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(materials, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def material_identity_keys(material: Material) -> Set[str]:
+    keys = set()
+    for field in ("id", "content_hash", "source_url", "note_id"):
+        value = material.get(field)
+        if isinstance(value, str) and value.strip():
+            keys.add(f"{field}:{value.strip()}")
+    return keys
+
+
+def append_unique_materials(
+    existing: List[Material],
+    incoming: Iterable[Material],
+) -> tuple[List[Material], List[Material]]:
+    combined = list(existing)
+    seen = set()
+    for material in combined:
+        seen.update(material_identity_keys(material))
+
+    added = []
+    for material in incoming:
+        keys = material_identity_keys(material)
+        if keys & seen:
+            continue
+        combined.append(material)
+        added.append(material)
+        seen.update(keys)
+    return combined, added
+
+
 def select_fallback_material(
     materials: Iterable[Material],
     *,

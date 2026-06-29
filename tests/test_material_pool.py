@@ -2,7 +2,12 @@ import json
 
 import pytest
 
-from scripts.excerpt_pipeline.material_pool import load_material_pool, select_fallback_material
+from scripts.excerpt_pipeline.material_pool import (
+    append_unique_materials,
+    load_material_pool,
+    save_material_pool,
+    select_fallback_material,
+)
 
 
 def _material(
@@ -13,6 +18,7 @@ def _material(
     title="标题",
     paragraphs=None,
     summary="摘要",
+    source_url="",
 ):
     return {
         "id": material_id,
@@ -21,6 +27,7 @@ def _material(
         "title": title,
         "paragraphs": paragraphs if paragraphs is not None else ["正文"],
         "summary": summary,
+        "source_url": source_url,
     }
 
 
@@ -40,6 +47,32 @@ def test_load_material_pool_rejects_non_list_json(tmp_path):
 
     with pytest.raises(ValueError, match="material pool must be a list"):
         load_material_pool(path)
+
+
+def test_save_material_pool_writes_pretty_json(tmp_path):
+    path = tmp_path / "pool.json"
+
+    save_material_pool(path, [{"id": "a", "title": "标题"}])
+
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    assert loaded == [{"id": "a", "title": "标题"}]
+    assert path.read_text(encoding="utf-8").endswith("\n")
+
+
+def test_append_unique_materials_skips_existing_note_url_and_hash():
+    existing = [
+        _material("old", "hash-a", source_url="https://example.com/a"),
+    ]
+    incoming = [
+        _material("same-url", "hash-b", source_url="https://example.com/a"),
+        _material("same-hash", "hash-a", source_url="https://example.com/b"),
+        _material("fresh", "hash-c", source_url="https://example.com/c"),
+    ]
+
+    combined, added = append_unique_materials(existing, incoming)
+
+    assert [item["id"] for item in combined] == ["old", "fresh"]
+    assert [item["id"] for item in added] == ["fresh"]
 
 
 def test_select_fallback_material_skips_used_and_duplicate_hash():

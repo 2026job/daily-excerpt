@@ -188,3 +188,17 @@ def test_github_actions_workflow_uses_note_url_secret_and_beijing_date():
     assert "python -m pytest -v" in workflow
     assert "--note-url" in workflow
     assert "--raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html" in workflow
+    assert 'cron: "10 22 * * *"' in workflow
+    assert "contents: read" in workflow
+
+
+def test_material_replenishment_workflow_runs_half_hourly_and_commits_pool():
+    workflow = Path(".github/workflows/material-replenishment.yml").read_text(encoding="utf-8")
+
+    assert 'cron: "7,37 * * * *"' in workflow
+    assert "contents: write" in workflow
+    assert "concurrency:" in workflow
+    assert "scripts/replenish_material_pool.py" in workflow
+    assert "--candidate-pool data/material_pool/xiaohongshu_candidates.json" in workflow
+    assert "Commit replenished material pool" in workflow
+    assert "git pull --rebase" in workflow

@@ -68,3 +68,11 @@ workflow 会显式使用北京时间日期：
 ```bash
 TZ=Asia/Shanghai date +%F
 ```
+
+## 候补素材池自动补充
+
+GitHub Actions 现在也会在每小时第 7 分钟和第 37 分钟运行一次素材补充流程。每次运行会抓取“欣欣的阅读疗愈记”的公开主页首屏帖子列表，并最多处理 1 篇尚未进入候补池的新帖子。
+
+如果公开主页能提供详情 URL，脚本会抓取详情正文并追加到 `data/material_pool/seed.json`，由 Action 自动提交回仓库。如果公开主页只暴露标题和封面，脚本会先把元信息保存到 `data/material_pool/xiaohongshu_candidates.json`，等待后续有可用 URL 或浏览器授权方案时再升级为正文素材。补充日志写入 `data/output/material_replenishment_logs.json`，随 Actions artifact 一起保存，方便查看抓取失败、解析失败或没有新素材的原因。
+
+这一步仍然遵循保守边界：只读取公开页面，不绕过登录、验证码、风控或私密内容限制。
