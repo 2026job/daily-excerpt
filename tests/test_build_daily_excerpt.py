@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import scripts.build_daily_excerpt as build_daily_excerpt
+from scripts.excerpt_pipeline.models import make_excerpt
 from scripts.excerpt_pipeline.publishers import LocalJsonPublisher
 
 
@@ -36,6 +37,7 @@ def test_build_daily_excerpt_dry_run_outputs_excerpt_and_log(tmp_path):
     assert excerpt["date"] == "2026-06-28"
     assert excerpt["title"]
     assert excerpt["paragraphs"]
+    assert excerpt["image_urls"]
     assert log["status"] in {"success", "fallback_used"}
 
 
@@ -60,6 +62,7 @@ def test_build_from_note_url_uses_fetch_html(monkeypatch):
     assert excerpt["date"] == "2026-06-29"
     assert excerpt["source_url"] == "https://www.xiaohongshu.com/explore/example"
     assert excerpt["paragraphs"]
+    assert excerpt["image_urls"]
 
 
 def test_build_from_note_url_reports_parse_failure(monkeypatch):
@@ -76,6 +79,32 @@ def test_build_from_note_url_reports_parse_failure(monkeypatch):
 
     assert excerpt is None
     assert skip_reason.startswith("note url parse failed:")
+
+
+def test_make_excerpt_normalizes_image_urls_for_https_pages():
+    excerpt = make_excerpt(
+        date="2026-06-29",
+        title="每日文摘",
+        paragraphs=["正文"],
+        summary="摘要",
+        source_name="来源",
+        source_url="https://example.com/source",
+        source_account_id="account",
+        content_hash="hash",
+        publish_type="fresh",
+        image_urls=[
+            "http://example.com/image.jpg",
+            " https://example.com/ready.jpg ",
+            "",
+            123,
+            None,
+        ],
+    )
+
+    assert excerpt["image_urls"] == [
+        "https://example.com/image.jpg",
+        "https://example.com/ready.jpg",
+    ]
 
 
 def test_dry_run_writes_failed_log_for_malformed_existing_excerpts(tmp_path):

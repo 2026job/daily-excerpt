@@ -7,6 +7,9 @@ def test_pages_site_has_static_reader():
     assert "data/excerpts.json" in html
     assert 'id="excerpt-title"' in html
     assert 'id="history-list"' in html
+    assert "image_urls" in html
+    assert "Array.isArray(excerpt.image_urls)" in html
+    assert 'class="image-gallery"' in html
     assert "renderExcerpt" in html
 
 

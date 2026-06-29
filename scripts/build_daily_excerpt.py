@@ -86,6 +86,7 @@ def main() -> int:
             source_account_id="",
             content_hash=fallback["content_hash"],
             publish_type="fallback",
+            image_urls=fallback.get("image_urls", []),
         )
         excerpt_id = publisher.publish_excerpt(excerpt)
         publisher.publish_job_log(
@@ -142,6 +143,7 @@ def _build_from_raw_note(
             source_account_id="xiaohongshu-xinxin",
             content_hash=content_hash(title, paragraphs),
             publish_type="fresh",
+            image_urls=note.get("image_urls", []),
         ),
         "",
     )
@@ -172,6 +174,7 @@ def _build_from_note_url(
             source_account_id="xiaohongshu-xinxin",
             content_hash=content_hash(title, paragraphs),
             publish_type="fresh",
+            image_urls=note.get("image_urls", []),
         ),
         "",
     )

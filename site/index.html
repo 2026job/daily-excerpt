@@ -76,6 +76,23 @@
       margin-bottom: 28px;
     }
 
+    .image-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .image-gallery img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border: 1px solid rgba(221, 211, 198, 0.75);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
     .paragraphs {
       display: grid;
       gap: 18px;
@@ -207,6 +224,14 @@
       const paragraphs = (excerpt.paragraphs || [])
         .map((paragraph) => `<p>${escapeText(paragraph)}</p>`)
         .join("");
+      const imageUrls = Array.isArray(excerpt.image_urls) ? excerpt.image_urls : [];
+      const images = imageUrls
+        .filter(Boolean)
+        .map((url, index) => `
+          <img src="${escapeText(url)}" alt="${escapeText(excerpt.title || "文摘配图")} ${index + 1}" loading="lazy" referrerpolicy="no-referrer">
+        `)
+        .join("");
+      const imageGallery = images ? `<div class="image-gallery">${images}</div>` : "";
       const source = excerpt.source_url
         ? `<a href="${escapeText(excerpt.source_url)}" target="_blank" rel="noreferrer">${escapeText(excerpt.source_name || "来源")}</a>`
         : escapeText(excerpt.source_name || "");
@@ -214,6 +239,7 @@
       view.innerHTML = `
         <h2 id="excerpt-title">${escapeText(excerpt.title || "每日文摘")}</h2>
         <p class="source">${source}</p>
+        ${imageGallery}
         <div class="paragraphs">${paragraphs}</div>
       `;
 

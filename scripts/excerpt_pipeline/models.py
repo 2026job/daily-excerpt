@@ -1,9 +1,23 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def normalize_image_urls(image_urls: Optional[List[Any]]) -> List[str]:
+    normalized = []
+    for url in image_urls or []:
+        if not isinstance(url, str):
+            continue
+        url = url.strip()
+        if not url:
+            continue
+        if url.startswith("http://"):
+            url = "https://" + url[len("http://") :]
+        normalized.append(url)
+    return normalized
 
 
 def make_excerpt(
@@ -17,11 +31,13 @@ def make_excerpt(
     source_account_id: str,
     content_hash: str,
     publish_type: str,
+    image_urls: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     return {
         "date": date,
         "title": title,
         "paragraphs": paragraphs,
+        "image_urls": normalize_image_urls(image_urls),
         "summary": summary,
         "source_name": source_name,
         "source_url": source_url,
