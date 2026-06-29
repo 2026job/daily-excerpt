@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,7 @@ def test_build_daily_excerpt_dry_run_outputs_excerpt_and_log(tmp_path):
     output_dir = tmp_path / "output"
     result = subprocess.run(
         [
-            ".venv/bin/python",
+            sys.executable,
             "scripts/build_daily_excerpt.py",
             "--dry-run",
             "--date",
@@ -84,7 +85,7 @@ def test_dry_run_writes_failed_log_for_malformed_existing_excerpts(tmp_path):
 
     result = subprocess.run(
         [
-            ".venv/bin/python",
+            sys.executable,
             "scripts/build_daily_excerpt.py",
             "--dry-run",
             "--date",
@@ -111,7 +112,7 @@ def test_dry_run_fallback_log_includes_raw_note_skip_reason(tmp_path):
     output_dir = tmp_path / "output"
     result = subprocess.run(
         [
-            ".venv/bin/python",
+            sys.executable,
             "scripts/build_daily_excerpt.py",
             "--dry-run",
             "--date",
