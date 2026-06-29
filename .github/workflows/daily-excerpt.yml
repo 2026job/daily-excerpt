@@ -30,6 +30,15 @@ jobs:
       - name: Run tests
         run: python -m pytest -v
 
+      - name: Restore deployed excerpt history
+        run: |
+          mkdir -p data/output
+          if curl -fsSL https://2026job.github.io/daily-excerpt/data/excerpts.json -o data/output/excerpts.json; then
+            python -m json.tool data/output/excerpts.json >/dev/null
+          else
+            printf '[]\n' > data/output/excerpts.json
+          fi
+
       - name: Build daily excerpt dry run
         env:
           XHS_NOTE_URL: ${{ secrets.XHS_NOTE_URL }}

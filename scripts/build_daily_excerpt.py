@@ -40,7 +40,20 @@ def main() -> int:
     publisher = LocalJsonPublisher(Path(args.output_dir))
 
     try:
-        published_hashes = _load_published_hashes(Path(args.output_dir) / "excerpts.json")
+        excerpts_path = Path(args.output_dir) / "excerpts.json"
+        if _has_published_date(excerpts_path, args.date):
+            publisher.publish_job_log(
+                make_job_log(
+                    date=args.date,
+                    status="skipped",
+                    source_name="",
+                    message="excerpt already published for date",
+                )
+            )
+            print("excerpt already published for date")
+            return 0
+
+        published_hashes = _load_published_hashes(excerpts_path)
         material_pool = load_material_pool(Path(args.material_pool))
         if args.note_url:
             excerpt, fresh_skip_reason = _build_from_note_url(args.date, args.note_url, args.timeout)
@@ -197,6 +210,18 @@ def _load_published_hashes(path: Path) -> Set[str]:
         if isinstance(content_hash_value, str):
             hashes.add(content_hash_value)
     return hashes
+
+
+def _has_published_date(path: Path, date: str) -> bool:
+    if not path.exists():
+        return False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path} contains invalid JSON") from exc
+    if not isinstance(data, list):
+        raise ValueError(f"{path} must contain a JSON list")
+    return any(isinstance(item, dict) and item.get("date") == date for item in data)
 
 
 def _fallback_message(fresh_skip_reason: str) -> str:

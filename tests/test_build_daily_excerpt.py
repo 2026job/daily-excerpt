@@ -137,6 +137,46 @@ def test_dry_run_writes_failed_log_for_malformed_existing_excerpts(tmp_path):
     assert str(output_dir / "excerpts.json") in log["error_detail"]
 
 
+def test_dry_run_skips_when_date_already_published(tmp_path):
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    existing = {
+        "date": "2026-06-28",
+        "title": "已有文摘",
+        "content_hash": "old-hash",
+    }
+    (output_dir / "excerpts.json").write_text(
+        json.dumps([existing], ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_daily_excerpt.py",
+            "--dry-run",
+            "--date",
+            "2026-06-28",
+            "--output-dir",
+            str(output_dir),
+            "--material-pool",
+            "data/material_pool/seed.json",
+            "--raw-note-html",
+            "data/raw/xiaohongshu-c80cf3e1ef14.html",
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    excerpts = json.loads((output_dir / "excerpts.json").read_text(encoding="utf-8"))
+    log = json.loads((output_dir / "job_logs.json").read_text(encoding="utf-8"))[0]
+    assert "excerpt already published for date" in result.stdout
+    assert excerpts == [existing]
+    assert log["status"] == "skipped"
+    assert log["message"] == "excerpt already published for date"
+
+
 def test_dry_run_fallback_log_includes_raw_note_skip_reason(tmp_path):
     output_dir = tmp_path / "output"
     result = subprocess.run(
@@ -186,6 +226,9 @@ def test_github_actions_workflow_uses_note_url_secret_and_beijing_date():
     assert "XHS_NOTE_URL" in workflow
     assert "TZ=Asia/Shanghai date +%F" in workflow
     assert "python -m pytest -v" in workflow
+    assert "Restore deployed excerpt history" in workflow
+    assert "https://2026job.github.io/daily-excerpt/data/excerpts.json" in workflow
+    assert "data/output/excerpts.json" in workflow
     assert "--note-url" in workflow
     assert "--raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html" in workflow
     assert 'cron: "10 22 * * *"' in workflow
