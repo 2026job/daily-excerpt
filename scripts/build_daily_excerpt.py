@@ -17,7 +17,7 @@ from excerpt_pipeline.material_pool import load_material_pool, select_fallback_m
 from excerpt_pipeline.models import make_excerpt, make_job_log
 from excerpt_pipeline.ocr import create_ocr_client
 from excerpt_pipeline.publishers import LocalJsonPublisher
-from fetch_xiaohongshu_note import extract_note
+from fetch_xiaohongshu_note import extract_note, fetch_html
 
 
 def main() -> int:
@@ -30,6 +30,8 @@ def main() -> int:
         default=str(PROJECT_ROOT / "data" / "material_pool" / "seed.json"),
     )
     parser.add_argument("--raw-note-html", default="")
+    parser.add_argument("--note-url", default="")
+    parser.add_argument("--timeout", type=int, default=20)
     args = parser.parse_args()
 
     if not args.dry_run:
@@ -40,8 +42,11 @@ def main() -> int:
     try:
         published_hashes = _load_published_hashes(Path(args.output_dir) / "excerpts.json")
         material_pool = load_material_pool(Path(args.material_pool))
-        raw_path = Path(args.raw_note_html) if args.raw_note_html else None
-        excerpt, fresh_skip_reason = _build_from_raw_note(args.date, raw_path)
+        if args.note_url:
+            excerpt, fresh_skip_reason = _build_from_note_url(args.date, args.note_url, args.timeout)
+        else:
+            raw_path = Path(args.raw_note_html) if args.raw_note_html else None
+            excerpt, fresh_skip_reason = _build_from_raw_note(args.date, raw_path)
         if excerpt and excerpt["content_hash"] not in published_hashes:
             excerpt_id = publisher.publish_excerpt(excerpt)
             publisher.publish_job_log(
@@ -134,6 +139,36 @@ def _build_from_raw_note(
             summary=build_summary(paragraphs),
             source_name=note.get("account_name") or note.get("expected_account_name") or "",
             source_url=note.get("note_url") or "",
+            source_account_id="xiaohongshu-xinxin",
+            content_hash=content_hash(title, paragraphs),
+            publish_type="fresh",
+        ),
+        "",
+    )
+
+
+def _build_from_note_url(
+    date: str, note_url: str, timeout: int
+) -> Tuple[Optional[Dict[str, Any]], str]:
+    html_text, _status = fetch_html(note_url, timeout)
+    note = extract_note(html_text, note_url, "欣欣的阅读疗愈记")
+    if note.get("parse_status") != "ok":
+        return None, f"note url parse failed: {note.get('parse_status') or 'unknown'}"
+
+    ocr_texts = create_ocr_client().extract_texts(note.get("image_urls", []))
+    paragraphs = rebuild_paragraphs(note.get("content", ""), "\n\n".join(ocr_texts))
+    if not paragraphs:
+        return None, "note url had no paragraphs"
+
+    title = note.get("title") or "每日文摘"
+    return (
+        make_excerpt(
+            date=date,
+            title=title,
+            paragraphs=paragraphs,
+            summary=build_summary(paragraphs),
+            source_name=note.get("account_name") or note.get("expected_account_name") or "",
+            source_url=note.get("note_url") or note_url,
             source_account_id="xiaohongshu-xinxin",
             content_hash=content_hash(title, paragraphs),
             publish_type="fresh",

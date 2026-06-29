@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import scripts.build_daily_excerpt as build_daily_excerpt
 from scripts.excerpt_pipeline.publishers import LocalJsonPublisher
 
 
@@ -35,6 +36,45 @@ def test_build_daily_excerpt_dry_run_outputs_excerpt_and_log(tmp_path):
     assert excerpt["title"]
     assert excerpt["paragraphs"]
     assert log["status"] in {"success", "fallback_used"}
+
+
+def test_build_from_note_url_uses_fetch_html(monkeypatch):
+    html_text = Path("data/raw/xiaohongshu-c80cf3e1ef14.html").read_text(encoding="utf-8")
+    calls = []
+
+    def fake_fetch_html(url, timeout):
+        calls.append((url, timeout))
+        return html_text, 200
+
+    monkeypatch.setattr(build_daily_excerpt, "fetch_html", fake_fetch_html)
+
+    excerpt, skip_reason = build_daily_excerpt._build_from_note_url(
+        "2026-06-29",
+        "https://www.xiaohongshu.com/explore/example",
+        7,
+    )
+
+    assert calls == [("https://www.xiaohongshu.com/explore/example", 7)]
+    assert skip_reason == ""
+    assert excerpt["date"] == "2026-06-29"
+    assert excerpt["source_url"] == "https://www.xiaohongshu.com/explore/example"
+    assert excerpt["paragraphs"]
+
+
+def test_build_from_note_url_reports_parse_failure(monkeypatch):
+    def fake_fetch_html(url, timeout):
+        return "<html>登录后推荐更懂你的笔记</html>", 200
+
+    monkeypatch.setattr(build_daily_excerpt, "fetch_html", fake_fetch_html)
+
+    excerpt, skip_reason = build_daily_excerpt._build_from_note_url(
+        "2026-06-29",
+        "https://www.xiaohongshu.com/explore/blocked",
+        7,
+    )
+
+    assert excerpt is None
+    assert skip_reason.startswith("note url parse failed:")
 
 
 def test_dry_run_writes_failed_log_for_malformed_existing_excerpts(tmp_path):
@@ -108,3 +148,12 @@ def test_local_json_publisher_validates_existing_json_and_does_not_mutate_item(t
     (tmp_path / "job_logs.json").write_text('{"not": "a list"}', encoding="utf-8")
     with pytest.raises(ValueError, match="job_logs.json.*list"):
         publisher.publish_job_log({"status": "success"})
+
+
+def test_github_actions_workflow_uses_note_url_secret_and_beijing_date():
+    workflow = Path(".github/workflows/daily-excerpt.yml").read_text(encoding="utf-8")
+
+    assert "XHS_NOTE_URL" in workflow
+    assert "TZ=Asia/Shanghai date +%F" in workflow
+    assert "--note-url" in workflow
+    assert "--raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html" in workflow

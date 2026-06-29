@@ -35,6 +35,7 @@ Dry run 会把输出写入 `data/output/`，不会调用微信云数据库。
 - `WECHAT_CLOUD_ENV_ID`
 - `WECHAT_APP_ID`
 - `WECHAT_APP_SECRET`
+- `XHS_NOTE_URL`
 - `TENCENT_SECRET_ID`
 - `TENCENT_SECRET_KEY`
 - `TENCENT_OCR_REGION`
@@ -52,3 +53,18 @@ Dry run 会把输出写入 `data/output/`，不会调用微信云数据库。
 5. 在 GitHub Actions Secrets 中配置微信云开发和 OCR 凭据。
 
 第一版可以先用 `python3 scripts/build_daily_excerpt.py --dry-run` 验证文摘生成，再接入真实微信云数据库发布。
+
+## GitHub Actions 自动更新 MVP
+
+当前 workflow 会每天运行一次，也支持手动触发。前期不写入微信云数据库，只生成 `data/output/excerpts.json` 和 `data/output/job_logs.json` artifact。
+
+在 GitHub 仓库的 Actions Secrets 中配置：
+
+- `XHS_NOTE_URL`：公开小红书笔记 URL。未配置时会使用仓库内 fixture 做 dry-run。
+- `TENCENT_SECRET_ID`、`TENCENT_SECRET_KEY`、`TENCENT_OCR_REGION`：可选 OCR 凭据。未配置时只使用 HTML 正文清洗。
+
+workflow 会显式使用北京时间日期：
+
+```bash
+TZ=Asia/Shanghai date +%F
+```
