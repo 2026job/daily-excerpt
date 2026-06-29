@@ -156,5 +156,6 @@ def test_github_actions_workflow_uses_note_url_secret_and_beijing_date():
 
     assert "XHS_NOTE_URL" in workflow
     assert "TZ=Asia/Shanghai date +%F" in workflow
+    assert "python -m pytest -v" in workflow
     assert "--note-url" in workflow
     assert "--raw-note-html data/raw/xiaohongshu-c80cf3e1ef14.html" in workflow
